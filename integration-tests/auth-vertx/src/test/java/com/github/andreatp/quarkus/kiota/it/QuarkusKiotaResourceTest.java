@@ -2,8 +2,7 @@ package com.github.andreatp.quarkus.kiota.it;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.microsoft.kiota.RequestAdapter;
-import com.microsoft.kiota.http.VertXRequestAdapter;
+import com.github.andreatp.kiota.vertx.VertXRequestAdapter;
 import io.apisdk.example.yaml.ApiClient;
 import io.apisdk.example.yaml.models.Greeting;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -55,7 +54,7 @@ public class QuarkusKiotaResourceTest {
                         .withCredentials(oauth2Credentials);
 
         // Arrange
-        RequestAdapter adapter = new VertXRequestAdapter(oAuth2WebClient);
+        var adapter = new VertXRequestAdapter(oAuth2WebClient);
         adapter.setBaseUrl("http://localhost:8081");
         ApiClient client = new ApiClient(adapter);
 

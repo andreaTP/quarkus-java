@@ -1,4 +1,4 @@
-package com.microsoft.kiota.http;
+package com.github.andreatp.kiota.jdk;
 
 import java.net.URISyntaxException;
 import java.net.http.HttpRequest;

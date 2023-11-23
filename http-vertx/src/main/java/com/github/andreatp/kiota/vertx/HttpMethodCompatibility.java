@@ -1,4 +1,4 @@
-package com.microsoft.kiota.http;
+package com.github.andreatp.kiota.vertx;
 
 import io.vertx.core.http.HttpMethod;
 

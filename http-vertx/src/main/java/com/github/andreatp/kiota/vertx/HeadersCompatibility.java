@@ -1,4 +1,4 @@
-package com.microsoft.kiota.http;
+package com.github.andreatp.kiota.vertx;
 
 import com.microsoft.kiota.RequestHeaders;
 import com.microsoft.kiota.ResponseHeaders;

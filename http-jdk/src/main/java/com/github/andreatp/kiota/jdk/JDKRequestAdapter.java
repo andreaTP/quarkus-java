@@ -1,7 +1,4 @@
-package com.microsoft.kiota.http;
-
-import static com.microsoft.kiota.http.HeadersCompatibility.getMultiMap;
-import static com.microsoft.kiota.http.HttpMethodCompatibility.convert;
+package com.github.andreatp.kiota.jdk;
 
 import com.microsoft.kiota.ApiClientBuilder;
 import com.microsoft.kiota.ApiException;
@@ -23,21 +20,14 @@ import com.microsoft.kiota.serialization.SerializationWriterFactoryRegistry;
 import com.microsoft.kiota.serialization.ValuedEnumParser;
 import com.microsoft.kiota.store.BackingStoreFactory;
 import com.microsoft.kiota.store.BackingStoreFactorySingleton;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.ext.web.client.HttpRequest;
-import io.vertx.ext.web.client.HttpResponse;
-import io.vertx.ext.web.client.WebClient;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -46,12 +36,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 /** RequestAdapter implementation for VertX */
-public class VertXRequestAdapter implements RequestAdapter {
+public class JDKRequestAdapter implements RequestAdapter {
     private static final String contentTypeHeaderKey = "Content-Type";
-    @Nonnull private final WebClient client;
+    @Nonnull private final HttpClient client;
     @Nonnull private ParseNodeFactory pNodeFactory;
     @Nonnull private SerializationWriterFactory sWriterFactory;
     @Nonnull private String baseUrl = "";
@@ -65,25 +54,25 @@ public class VertXRequestAdapter implements RequestAdapter {
         return baseUrl;
     }
 
-    public VertXRequestAdapter(@Nonnull final Vertx vertx) {
-        this(WebClient.create(vertx));
+    public JDKRequestAdapter() {
+        this(null, null, null);
     }
 
-    public VertXRequestAdapter(@Nullable final WebClient client) {
+    public JDKRequestAdapter(@Nonnull final HttpClient client) {
         this(client, null, null);
     }
 
-    public VertXRequestAdapter(
-            @Nullable final WebClient client, @Nullable final ParseNodeFactory parseNodeFactory) {
+    public JDKRequestAdapter(
+            @Nullable final HttpClient client, @Nullable final ParseNodeFactory parseNodeFactory) {
         this(client, parseNodeFactory, null);
     }
 
-    public VertXRequestAdapter(
-            @Nullable final WebClient client,
+    public JDKRequestAdapter(
+            @Nullable final HttpClient client,
             @Nullable final ParseNodeFactory parseNodeFactory,
             @Nullable final SerializationWriterFactory serializationWriterFactory) {
         if (client == null) {
-            this.client = WebClient.create(Vertx.vertx());
+            this.client = HttpClient.newHttpClient();
         } else {
             this.client = client;
         }
@@ -205,9 +194,7 @@ public class VertXRequestAdapter implements RequestAdapter {
             } else {
                 if (targetClass == InputStream.class) {
                     // TODO: verify streaming responses
-                    final InputStream rawInputStream =
-                            new ByteArrayInputStream(response.bodyAsBuffer().getBytes());
-                    return (ModelType) rawInputStream;
+                    return (ModelType) response.body();
                 }
                 final ParseNode rootNode = getRootParseNode(response);
                 if (rootNode == null) {
@@ -332,15 +319,13 @@ public class VertXRequestAdapter implements RequestAdapter {
     }
 
     @Nullable
-    private ParseNode getRootParseNode(final HttpResponse response) {
-        final Buffer body =
-                response.bodyAsBuffer(); // closing the response closes the body and stream
-        if (body == null) {
+    private ParseNode getRootParseNode(final HttpResponse<InputStream> response) {
+        final InputStream rawInputStream = response.body();
+        if (rawInputStream == null) {
             return null;
         }
-        final InputStream rawInputStream = new ByteArrayInputStream(body.getBytes());
 
-        final String contentType = response.headers().get(contentTypeHeaderKey);
+        final String contentType = response.headers().firstValue(contentTypeHeaderKey).orElse(null);
         if (contentType == null) {
             return null;
         }
@@ -351,7 +336,7 @@ public class VertXRequestAdapter implements RequestAdapter {
         return response.statusCode() == 204;
     }
 
-    private HttpResponse throwIfFailedResponse(
+    private HttpResponse<InputStream> throwIfFailedResponse(
             @Nonnull final HttpResponse response,
             @Nullable final HashMap<String, ParsableFactory<? extends Parsable>> errorMappings) {
         if (response.statusCode() >= 200 && response.statusCode() < 300) return response;
@@ -407,36 +392,12 @@ public class VertXRequestAdapter implements RequestAdapter {
         throw result;
     }
 
-    private HttpResponse getHttpResponseMessage(@Nonnull final RequestInformation requestInfo) {
+    private HttpResponse<InputStream> getHttpResponseMessage(@Nonnull final RequestInformation requestInfo) {
         Objects.requireNonNull(requestInfo, nullRequestInfoParameter);
         this.setBaseUrlForRequestInformation(requestInfo);
-        Future<HttpResponse<Buffer>> result;
         try {
-            var req =
-                    this.client
-                            .requestAbs(
-                                    convert(requestInfo.httpMethod),
-                                    requestInfo.getUri().toString())
-                            .putHeaders(getMultiMap(requestInfo.headers))
-                            .followRedirects(true);
-            if (requestInfo.content == null) {
-                result = req.send();
-            } else {
-                byte[] content = requestInfo.content.readAllBytes();
-                if (content.length > 0) {
-                    result = req.sendBuffer(Buffer.buffer(content));
-                } else {
-                    result = req.send();
-                }
-            }
-
-            // TODO: move this to await in VirtualThreads, should be easy!
-            return result.toCompletionStage().toCompletableFuture().get();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+            return this.client.send(HttpRequestCompatibility.convert(requestInfo), HttpResponse.BodyHandlers.ofInputStream());
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -450,24 +411,12 @@ public class VertXRequestAdapter implements RequestAdapter {
 
     @Nonnull
     public <T> T convertToNativeRequest(@Nonnull final RequestInformation requestInfo) {
-        try {
-            Objects.requireNonNull(requestInfo, nullRequestInfoParameter);
-            return (T) getRequestFromRequestInformation(requestInfo);
-        } catch (URISyntaxException | MalformedURLException ex) {
-            throw new RuntimeException(ex);
-        }
+        Objects.requireNonNull(requestInfo, nullRequestInfoParameter);
+        return (T) getRequestFromRequestInformation(requestInfo);
     }
 
     protected @Nonnull HttpRequest getRequestFromRequestInformation(
-            @Nonnull final RequestInformation requestInfo)
-            throws URISyntaxException, MalformedURLException {
-        final URL requestURL = requestInfo.getUri().toURL();
-
-        final HttpRequest request =
-                client.requestAbs(convert(requestInfo.httpMethod), requestURL.toString())
-                        .followRedirects(true);
-
-        request.putHeaders(getMultiMap(requestInfo.headers));
-        return request;
+            @Nonnull final RequestInformation requestInfo) {
+        return HttpRequestCompatibility.convert(requestInfo);
     }
 }
