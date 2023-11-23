@@ -24,6 +24,11 @@
       <artifactId>quarkus-resteasy-jackson</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-oidc</artifactId>
+    </dependency>
+
     <!-- Kiota specific dependencies -->
     <dependency>
       <groupId>com.microsoft.kiota</groupId>
