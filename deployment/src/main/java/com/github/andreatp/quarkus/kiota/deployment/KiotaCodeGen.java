@@ -261,6 +261,11 @@ public abstract class KiotaCodeGen implements CodeGenProvider {
         return namespaceResolver.toFile();
     }
 
+    private boolean lockFileExists(Path outDir, Config config, String filename) {
+        return new File(finalTargetDirectory(outDir, config, filename).getAbsolutePath(),
+                "kiota-lock.json").exists();
+    }
+
     private void runProcess(
             List<String> cmd, boolean redirectIO, Path outputDir, Config config, String filename)
             throws CodeGenException {
@@ -280,15 +285,10 @@ public abstract class KiotaCodeGen implements CodeGenProvider {
                 throw new CodeGenException(
                         "Error executing the Kiota command, exit code is " + ps.exitValue());
             }
-            File kiotaLockFile =
-                    new File(
-                            finalTargetDirectory(outputDir, config, filename).getAbsolutePath(),
-                            "kiota-lock.json");
-            if (!kiotaLockFile.exists()) {
+            if (!lockFileExists(outputDir, config, filename)) {
                 throw new CodeGenException(
                         "Error executing the Kiota command, no output found, cannot find the"
-                                + " generated lock file: "
-                                + kiotaLockFile.getAbsolutePath());
+                                + " generated lock file.");
             }
         } catch (IOException e) {
             throw new CodeGenException("Failed to execute kiota", e);
