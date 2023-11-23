@@ -15,6 +15,7 @@
     <!-- Abstraction libraries -->
     <module>serialization-jackson</module>
     <module>http-vertx</module>
+    <module>http-jdk</module>
   </modules>
   <properties>
     <compiler-plugin.version>3.11.0</compiler-plugin.version>

@@ -6,8 +6,8 @@
     <artifactId>quarkus-kiota-integration-tests-parent</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
-  <artifactId>quarkus-kiota-integration-tests-basic</artifactId>
-  <name>Quarkus Kiota - Integration Tests - Basic</name>
+  <artifactId>quarkus-kiota-integration-tests-auth-vertx</artifactId>
+  <name>Quarkus Kiota - Integration Tests - Auth VertX</name>
   <dependencies>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -22,6 +22,11 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-resteasy-jackson</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-oidc</artifactId>
     </dependency>
 
     <!-- Kiota specific dependencies -->
@@ -68,6 +73,11 @@
     <dependency>
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-test-oidc-server</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

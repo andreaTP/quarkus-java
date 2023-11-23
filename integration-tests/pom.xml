@@ -11,8 +11,9 @@
   <name>Quarkus Kiota - Integration Tests - Parent</name>
   <modules>
     <module>000</module>
-    <module>auth</module>
-    <module>basic</module>
+    <module>basic-jdk</module>
+    <module>basic-vertx</module>
+    <module>auth-vertx</module>
     <module>rename</module>
   </modules>
   <properties>
