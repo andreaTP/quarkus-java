@@ -27,7 +27,8 @@
 //         when(mockResponse.code()).thenReturn(200);
 //         when(mockResponse.message()).thenReturn("OK");
 //         when(mockResponse.body()).thenReturn(mock(ResponseBody.class));
-//         when(mockResponse.headers()).thenReturn(new Headers.Builder().add("test", "test").build());
+//         when(mockResponse.headers()).thenReturn(new Headers.Builder().add("test",
+// "test").build());
 //         mockChain = mock(Chain.class);
 //         when(mockChain.proceed(any(Request.class)))
 //                 .thenAnswer(

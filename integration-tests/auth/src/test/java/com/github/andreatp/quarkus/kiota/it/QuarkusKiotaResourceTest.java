@@ -1,7 +1,8 @@
 package com.github.andreatp.quarkus.kiota.it;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.microsoft.kiota.RequestAdapter;
-import com.microsoft.kiota.authentication.AnonymousAuthenticationProvider;
 import com.microsoft.kiota.http.VertXRequestAdapter;
 import io.apisdk.example.yaml.ApiClient;
 import io.apisdk.example.yaml.models.Greeting;
@@ -17,16 +18,11 @@ import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.OAuth2WebClient;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.Test;
-
 import jakarta.inject.Inject;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 @QuarkusTestResource(OidcWiremockTestResource.class)
@@ -34,28 +30,29 @@ public class QuarkusKiotaResourceTest {
 
     @ConfigProperty(name = "quarkus.oidc.auth-server-url")
     String keycloakUrl;
-    @Inject
-    Vertx vertx;
 
-    final static String CLIENT_ID = UUID.randomUUID().toString();
-    final static String CLIENT_SECRET = UUID.randomUUID().toString();
+    @Inject Vertx vertx;
+
+    static final String CLIENT_ID = UUID.randomUUID().toString();
+    static final String CLIENT_SECRET = UUID.randomUUID().toString();
 
     @Test
     public void testHelloEndpointUsingTheKiotaClient() throws Exception {
-        OAuth2Options options = new OAuth2Options()
-                .setFlow(OAuth2FlowType.CLIENT)
-                .setClientId(CLIENT_ID)
-                .setTokenPath(keycloakUrl + "token")
-                .setClientSecret(CLIENT_SECRET);
+        OAuth2Options options =
+                new OAuth2Options()
+                        .setFlow(OAuth2FlowType.CLIENT)
+                        .setClientId(CLIENT_ID)
+                        .setTokenPath(keycloakUrl + "token")
+                        .setClientSecret(CLIENT_SECRET);
 
-        //Adding using random UUIDs as the mock does not care about concrete values
+        // Adding using random UUIDs as the mock does not care about concrete values
         OAuth2Auth oAuth2Auth = OAuth2Auth.create(vertx, options);
 
         Oauth2Credentials oauth2Credentials = new Oauth2Credentials();
 
-        OAuth2WebClient oAuth2WebClient = OAuth2WebClient
-                .create(WebClient.create(vertx), oAuth2Auth)
-                .withCredentials(oauth2Credentials);
+        OAuth2WebClient oAuth2WebClient =
+                OAuth2WebClient.create(WebClient.create(vertx), oAuth2Auth)
+                        .withCredentials(oauth2Credentials);
 
         // Arrange
         RequestAdapter adapter = new VertXRequestAdapter(oAuth2WebClient);
@@ -73,31 +70,39 @@ public class QuarkusKiotaResourceTest {
     public void testVertxExample() throws Exception {
         // Arrange
         Vertx vertx = Vertx.vertx();
-        WebClient webClient = WebClient.create(vertx); //Don't do this in a regular application, the vertx instance must be injected
+        WebClient webClient =
+                WebClient.create(
+                        vertx); // Don't do this in a regular application, the vertx instance must
+        // be injected
 
-        OAuth2Options options = new OAuth2Options()
-                .setFlow(OAuth2FlowType.CLIENT)
-                .setClientId(UUID.randomUUID().toString())
-                .setTokenPath(keycloakUrl + "token")
-                .setClientSecret(UUID.randomUUID().toString());
+        OAuth2Options options =
+                new OAuth2Options()
+                        .setFlow(OAuth2FlowType.CLIENT)
+                        .setClientId(UUID.randomUUID().toString())
+                        .setTokenPath(keycloakUrl + "token")
+                        .setClientSecret(UUID.randomUUID().toString());
 
-        //Adding random as the mock does not care about concrete values
+        // Adding random as the mock does not care about concrete values
         OAuth2Auth oAuth2Auth = OAuth2Auth.create(vertx, options);
 
         Oauth2Credentials oauth2Credentials = new Oauth2Credentials();
 
-        OAuth2WebClient oAuth2WebClient = OAuth2WebClient.create(webClient, oAuth2Auth)
-                .withCredentials(oauth2Credentials);
+        OAuth2WebClient oAuth2WebClient =
+                OAuth2WebClient.create(webClient, oAuth2Auth).withCredentials(oauth2Credentials);
 
-        HttpRequest<Greeting> greetingHttpRequest = oAuth2WebClient
-                .get(8081, "localhost", "/quarkus-kiota")
-                .as(BodyCodec.json(Greeting.class));
+        HttpRequest<Greeting> greetingHttpRequest =
+                oAuth2WebClient
+                        .get(8081, "localhost", "/quarkus-kiota")
+                        .as(BodyCodec.json(Greeting.class));
 
         CompletableFuture<Greeting> greetingCompletableFuture = new CompletableFuture<>();
 
-        greetingHttpRequest.send().onSuccess(successResult -> {
-            greetingCompletableFuture.complete(successResult.body());
-        });
+        greetingHttpRequest
+                .send()
+                .onSuccess(
+                        successResult -> {
+                            greetingCompletableFuture.complete(successResult.body());
+                        });
 
         assertEquals("Hello quarkus-kiota", greetingCompletableFuture.get().getValue());
     }

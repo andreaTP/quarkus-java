@@ -10,14 +10,12 @@ import io.apisdk.example.yaml.ApiClient;
 import io.apisdk.example.yaml.models.Greeting;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.Vertx;
-import org.junit.jupiter.api.Test;
-
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 public class QuarkusKiotaResourceTest {
-    @Inject
-    Vertx vertx;
+    @Inject Vertx vertx;
 
     @Test
     public void testHelloEndpoint() {

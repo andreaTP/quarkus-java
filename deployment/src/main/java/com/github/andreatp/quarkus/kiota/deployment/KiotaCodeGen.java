@@ -218,11 +218,13 @@ public abstract class KiotaCodeGen implements CodeGenProvider {
         cmd.add(KiotaCodeGenConfig.getClientClassName(config, openApiSpec.toFile().getName()));
         cmd.add("--namespace-name");
         cmd.add(KiotaCodeGenConfig.getClientPackageName(config, openApiSpec.toFile().getName()));
-        for (String ser: KiotaCodeGenConfig.getSerializer(config, openApiSpec.toFile().getName())) {
+        for (String ser :
+                KiotaCodeGenConfig.getSerializer(config, openApiSpec.toFile().getName())) {
             cmd.add("--serializer");
             cmd.add(ser);
         }
-        for (String deser: KiotaCodeGenConfig.getDeserializer(config, openApiSpec.toFile().getName())) {
+        for (String deser :
+                KiotaCodeGenConfig.getDeserializer(config, openApiSpec.toFile().getName())) {
             cmd.add("--deserializer");
             cmd.add(deser);
         }

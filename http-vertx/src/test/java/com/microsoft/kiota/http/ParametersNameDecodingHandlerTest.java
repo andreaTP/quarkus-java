@@ -20,10 +20,13 @@
 //     private static Stream<Arguments> originalAndExpectedUrls() {
 //         return Stream.of(
 //                 Arguments.of("https://www.google.com/", "https://www.google.com/"),
-//                 Arguments.of("https://www.google.com/?q=1%2B2", "https://www.google.com/?q=1%2B2"),
-//                 Arguments.of("https://www.google.com/?q=M%26A", "https://www.google.com/?q=M%26A"),
+//                 Arguments.of("https://www.google.com/?q=1%2B2",
+// "https://www.google.com/?q=1%2B2"),
+//                 Arguments.of("https://www.google.com/?q=M%26A",
+// "https://www.google.com/?q=M%26A"),
 //                 Arguments.of(
-//                         "https://www.google.com/?q%2D1=M%26A", "https://www.google.com/?q-1=M%26A"),
+//                         "https://www.google.com/?q%2D1=M%26A",
+// "https://www.google.com/?q-1=M%26A"),
 //                 Arguments.of(
 //                         "https://www.google.com/?q%2D1&q=M%26A=M%26A",
 //                         "https://www.google.com/?q-1&q=M%26A=M%26A"));
@@ -38,7 +41,8 @@
 //                     new ParametersNameDecodingHandler(
 //                             new ParametersNameDecodingOption() {
 //                                 {
-//                                     parametersToDecode = new char[] {'$', '.', '-', '~', '+', '&'};
+//                                     parametersToDecode = new char[] {'$', '.', '-', '~', '+',
+// '&'};
 //                                 }
 //                             })
 //                 };

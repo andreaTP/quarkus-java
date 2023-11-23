@@ -10,15 +10,13 @@ import foo.bar.MyApiClient;
 import foo.bar.models.Greeting;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.Vertx;
-import org.junit.jupiter.api.Test;
-
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 public class QuarkusKiotaResourceTest {
 
-    @Inject
-    Vertx vertx;
+    @Inject Vertx vertx;
 
     @Test
     public void testHelloEndpoint() {

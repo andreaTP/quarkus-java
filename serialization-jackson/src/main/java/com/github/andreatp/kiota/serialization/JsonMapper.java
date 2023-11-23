@@ -7,5 +7,5 @@ public class JsonMapper {
     private JsonMapper() {}
 
     // We use a public mapper so that ppl can hack it around if needed.
-    public final static ObjectMapper mapper = new ObjectMapper();
+    public static final ObjectMapper mapper = new ObjectMapper();
 }

@@ -2,8 +2,8 @@ package com.github.andreatp.kiota.serialization;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.github.andreatp.kiota.serialization.mocks.MyEnum;
 import com.github.andreatp.kiota.serialization.mocks.IntersectionTypeMock;
+import com.github.andreatp.kiota.serialization.mocks.MyEnum;
 import com.github.andreatp.kiota.serialization.mocks.SecondTestEntity;
 import com.github.andreatp.kiota.serialization.mocks.TestEntity;
 import java.io.ByteArrayInputStream;
@@ -49,11 +49,12 @@ class IntersectionWrapperParseTests {
         assertNotNull(result.getComposedType2());
         assertNull(result.getComposedType3());
         assertNull(result.getStringValue());
-//        assertEquals(
-//                "10",
-//                result.getComposedType1()
-//                        .getId()); // difference in behaviour since Gson is more tolerant with
-//        // primitives
+        //        assertEquals(
+        //                "10",
+        //                result.getComposedType1()
+        //                        .getId()); // difference in behaviour since Gson is more tolerant
+        // with
+        //        // primitives
         assertNull(
                 result.getComposedType2()
                         .getId()); // expected since multiple fields are mapped to the same value

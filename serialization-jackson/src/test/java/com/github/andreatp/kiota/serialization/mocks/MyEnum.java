@@ -12,11 +12,13 @@ public enum MyEnum implements ValuedEnum {
         this.value = value;
     }
 
-    @jakarta.annotation.Nonnull public String getValue() {
+    @jakarta.annotation.Nonnull
+    public String getValue() {
         return this.value;
     }
 
-    @jakarta.annotation.Nullable public static MyEnum forValue(@jakarta.annotation.Nonnull final String searchValue) {
+    @jakarta.annotation.Nullable
+    public static MyEnum forValue(@jakarta.annotation.Nonnull final String searchValue) {
         Objects.requireNonNull(searchValue);
         switch (searchValue) {
             case "VALUE1":

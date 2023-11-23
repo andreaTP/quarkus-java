@@ -9,7 +9,6 @@ import com.microsoft.kiota.serialization.ParseNode;
 import com.microsoft.kiota.serialization.ValuedEnumParser;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -37,7 +36,8 @@ public class JsonParseNode implements ParseNode {
     }
 
     /** {@inheritDoc} */
-    @Nullable public ParseNode getChildNode(@Nonnull final String identifier) {
+    @Nullable
+    public ParseNode getChildNode(@Nonnull final String identifier) {
         Objects.requireNonNull(identifier, "identifier parameter is required");
         if (currentNode.isObject()) {
             final Consumer<Parsable> onBefore = this.onBeforeAssignFieldValues;
@@ -51,15 +51,18 @@ public class JsonParseNode implements ParseNode {
         } else return null;
     }
 
-    @Nullable public String getStringValue() {
+    @Nullable
+    public String getStringValue() {
         return currentNode.isTextual() ? currentNode.textValue() : null;
     }
 
-    @Nullable public Boolean getBooleanValue() {
+    @Nullable
+    public Boolean getBooleanValue() {
         return currentNode.isBoolean() ? currentNode.booleanValue() : null;
     }
 
-    @Nullable public Byte getByteValue() {
+    @Nullable
+    public Byte getByteValue() {
         if (currentNode.isInt()) {
             int intValue = currentNode.intValue();
             if (intValue >= Byte.MIN_VALUE && intValue <= Byte.MAX_VALUE) {
@@ -69,19 +72,23 @@ public class JsonParseNode implements ParseNode {
         return null;
     }
 
-    @Nullable public Short getShortValue() {
+    @Nullable
+    public Short getShortValue() {
         return currentNode.isShort() ? currentNode.shortValue() : null;
     }
 
-    @Nullable public BigDecimal getBigDecimalValue() {
+    @Nullable
+    public BigDecimal getBigDecimalValue() {
         return currentNode.isNumber() ? currentNode.decimalValue() : null;
     }
 
-    @Nullable public Integer getIntegerValue() {
+    @Nullable
+    public Integer getIntegerValue() {
         return currentNode.isInt() ? currentNode.intValue() : null;
     }
 
-    @Nullable public Float getFloatValue() {
+    @Nullable
+    public Float getFloatValue() {
         if (currentNode.isFloat()) {
             double doubleValue = currentNode.doubleValue();
             if (doubleValue >= Float.MIN_VALUE && doubleValue <= Float.MAX_VALUE) {
@@ -91,50 +98,59 @@ public class JsonParseNode implements ParseNode {
         return null;
     }
 
-    @Nullable public Double getDoubleValue() {
+    @Nullable
+    public Double getDoubleValue() {
         return currentNode.isFloatingPointNumber() ? currentNode.doubleValue() : null;
     }
 
-    @Nullable public Long getLongValue() {
+    @Nullable
+    public Long getLongValue() {
         return currentNode.isLong() ? currentNode.longValue() : null;
     }
 
-    @Nullable public UUID getUUIDValue() {
+    @Nullable
+    public UUID getUUIDValue() {
         if (currentNode.isTextual() && !currentNode.isNull()) {
             return UUID.fromString(currentNode.textValue());
         }
         return null;
     }
 
-    @Nullable public OffsetDateTime getOffsetDateTimeValue() {
+    @Nullable
+    public OffsetDateTime getOffsetDateTimeValue() {
         if (currentNode.isTextual() && !currentNode.isNull()) {
             return OffsetDateTime.parse(currentNode.textValue());
         }
         return null;
     }
 
-    @Nullable public LocalDate getLocalDateValue() {
+    @Nullable
+    public LocalDate getLocalDateValue() {
         if (currentNode.isTextual() && !currentNode.isNull()) {
             return LocalDate.parse(currentNode.textValue());
         }
         return null;
     }
 
-    @Nullable public LocalTime getLocalTimeValue() {
+    @Nullable
+    public LocalTime getLocalTimeValue() {
         if (currentNode.isTextual() && !currentNode.isNull()) {
             return LocalTime.parse(currentNode.textValue());
         }
         return null;
     }
 
-    @Nullable public PeriodAndDuration getPeriodAndDurationValue() {
+    @Nullable
+    public PeriodAndDuration getPeriodAndDurationValue() {
         if (currentNode.isTextual() && !currentNode.isNull()) {
             return PeriodAndDuration.parse(currentNode.textValue());
         }
         return null;
     }
 
-    @Nullable private <T> T getPrimitiveElement(@Nonnull final Class<T> targetClass, @Nonnull final JsonParseNode itemNode) {
+    @Nullable
+    private <T> T getPrimitiveElement(
+            @Nonnull final Class<T> targetClass, @Nonnull final JsonParseNode itemNode) {
         if (targetClass == Boolean.class) {
             return (T) itemNode.getBooleanValue();
         } else if (targetClass == Short.class) {
@@ -162,13 +178,12 @@ public class JsonParseNode implements ParseNode {
         } else if (targetClass == PeriodAndDuration.class) {
             return (T) itemNode.getPeriodAndDurationValue();
         } else {
-            throw new RuntimeException(
-                    "unknown type to deserialize "
-                            + targetClass.getName());
+            throw new RuntimeException("unknown type to deserialize " + targetClass.getName());
         }
     }
 
-    @Nullable public <T> List<T> getCollectionOfPrimitiveValues(@Nonnull final Class<T> targetClass) {
+    @Nullable
+    public <T> List<T> getCollectionOfPrimitiveValues(@Nonnull final Class<T> targetClass) {
         Objects.requireNonNull(targetClass, "parameter targetClass cannot be null");
         if (currentNode.isNull()) {
             return null;
@@ -186,7 +201,8 @@ public class JsonParseNode implements ParseNode {
         } else throw new RuntimeException("invalid state expected to have an array node");
     }
 
-    @Nullable public <T extends Parsable> List<T> getCollectionOfObjectValues(
+    @Nullable
+    public <T extends Parsable> List<T> getCollectionOfObjectValues(
             @Nonnull final ParsableFactory<T> factory) {
         Objects.requireNonNull(factory, "parameter factory cannot be null");
         if (currentNode.isNull()) {
@@ -205,7 +221,8 @@ public class JsonParseNode implements ParseNode {
         } else return null;
     }
 
-    @Nullable public <T extends Enum<T>> List<T> getCollectionOfEnumValues(
+    @Nullable
+    public <T extends Enum<T>> List<T> getCollectionOfEnumValues(
             @Nonnull final ValuedEnumParser<T> enumParser) {
         Objects.requireNonNull(enumParser, "parameter enumParser cannot be null");
         if (currentNode.isNull()) {
@@ -224,14 +241,16 @@ public class JsonParseNode implements ParseNode {
         } else throw new RuntimeException("invalid state expected to have an array node");
     }
 
-    @Nonnull public <T extends Parsable> T getObjectValue(@Nonnull final ParsableFactory<T> factory) {
+    @Nonnull
+    public <T extends Parsable> T getObjectValue(@Nonnull final ParsableFactory<T> factory) {
         Objects.requireNonNull(factory, "parameter factory cannot be null");
         final T item = factory.create(this);
         assignFieldValues(item, item.getFieldDeserializers());
         return item;
     }
 
-    @Nullable public <T extends Enum<T>> T getEnumValue(@Nonnull final ValuedEnumParser<T> enumParser) {
+    @Nullable
+    public <T extends Enum<T>> T getEnumValue(@Nonnull final ValuedEnumParser<T> enumParser) {
         final String rawValue = this.getStringValue();
         if (rawValue == null || rawValue.isEmpty()) {
             return null;
@@ -239,7 +258,9 @@ public class JsonParseNode implements ParseNode {
         return enumParser.forValue(rawValue);
     }
 
-    @Nullable public <T extends Enum<T>> EnumSet<T> getEnumSetValue(@Nonnull final ValuedEnumParser<T> enumParser) {
+    @Nullable
+    public <T extends Enum<T>> EnumSet<T> getEnumSetValue(
+            @Nonnull final ValuedEnumParser<T> enumParser) {
         final String rawValue = this.getStringValue();
         if (rawValue == null || rawValue.isEmpty()) {
             return null;
@@ -291,8 +312,10 @@ public class JsonParseNode implements ParseNode {
         else if (element.isValueNode()) {
             if (element.isBoolean()) return element.booleanValue();
             else if (element.isTextual()) return element.textValue();
-            else if (element.isFloatingPointNumber() && element.isFloat()) return element.floatValue();
-            else if (element.isFloatingPointNumber() && element.isDouble()) return element.doubleValue();
+            else if (element.isFloatingPointNumber() && element.isFloat())
+                return element.floatValue();
+            else if (element.isFloatingPointNumber() && element.isDouble())
+                return element.doubleValue();
             else
                 throw new RuntimeException(
                         "Could not get the value during deserialization, unknown primitive type");
@@ -303,11 +326,13 @@ public class JsonParseNode implements ParseNode {
         }
     }
 
-    @Nullable public Consumer<Parsable> getOnBeforeAssignFieldValues() {
+    @Nullable
+    public Consumer<Parsable> getOnBeforeAssignFieldValues() {
         return this.onBeforeAssignFieldValues;
     }
 
-    @Nullable public Consumer<Parsable> getOnAfterAssignFieldValues() {
+    @Nullable
+    public Consumer<Parsable> getOnAfterAssignFieldValues() {
         return this.onAfterAssignFieldValues;
     }
 
@@ -323,7 +348,8 @@ public class JsonParseNode implements ParseNode {
         this.onAfterAssignFieldValues = value;
     }
 
-    @Nullable public byte[] getByteArrayValue() {
+    @Nullable
+    public byte[] getByteArrayValue() {
         final String base64 = this.getStringValue();
         if (base64 == null || base64.isEmpty()) {
             return null;

@@ -47,7 +47,8 @@
 //             value = HttpMethod.class,
 //             names = {"PUT", "POST", "PATCH"})
 //     public void PostRequestsShouldHaveEmptyBody(HttpMethod method)
-//             throws Exception { // Unexpected exception thrown: java.lang.IllegalArgumentException:
+//             throws Exception { // Unexpected exception thrown:
+// java.lang.IllegalArgumentException:
 //         // method POST must have a request body.
 //         final AuthenticationProvider authenticationProviderMock =
 //                 mock(AuthenticationProvider.class);
@@ -244,7 +245,8 @@
 //         final var exception =
 //                 assertThrows(
 //                         ApiException.class,
-//                         () -> requestAdapter.send(requestInformation, (node) -> mockEntity, null));
+//                         () -> requestAdapter.send(requestInformation, (node) -> mockEntity,
+// null));
 //         assertNotNull(exception);
 //         assertEquals(404, exception.getResponseStatusCode());
 //         assertTrue(exception.getResponseHeaders().containsKey("request-id"));

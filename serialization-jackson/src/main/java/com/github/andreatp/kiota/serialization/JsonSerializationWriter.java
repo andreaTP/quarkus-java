@@ -39,7 +39,8 @@ public class JsonSerializationWriter implements SerializationWriter {
     /** Creates a new instance of a json serialization writer */
     public JsonSerializationWriter() {
         try {
-            this.generator = JsonMapper.mapper.writer().createGenerator(this.stream, JsonEncoding.UTF8);
+            this.generator =
+                    JsonMapper.mapper.writer().createGenerator(this.stream, JsonEncoding.UTF8);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -382,7 +383,8 @@ public class JsonSerializationWriter implements SerializationWriter {
         } else return null;
     }
 
-    @Nonnull public InputStream getSerializedContent() {
+    @Nonnull
+    public InputStream getSerializedContent() {
         try {
             this.generator.flush();
             return new ByteArrayInputStream(this.stream.toByteArray());
@@ -456,15 +458,18 @@ public class JsonSerializationWriter implements SerializationWriter {
         }
     }
 
-    @Nullable public Consumer<Parsable> getOnBeforeObjectSerialization() {
+    @Nullable
+    public Consumer<Parsable> getOnBeforeObjectSerialization() {
         return this.onBeforeObjectSerialization;
     }
 
-    @Nullable public Consumer<Parsable> getOnAfterObjectSerialization() {
+    @Nullable
+    public Consumer<Parsable> getOnAfterObjectSerialization() {
         return this.onAfterObjectSerialization;
     }
 
-    @Nullable public BiConsumer<Parsable, SerializationWriter> getOnStartObjectSerialization() {
+    @Nullable
+    public BiConsumer<Parsable, SerializationWriter> getOnStartObjectSerialization() {
         return this.onStartObjectSerialization;
     }
 

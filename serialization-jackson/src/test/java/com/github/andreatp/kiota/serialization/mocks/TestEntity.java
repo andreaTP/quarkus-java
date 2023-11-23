@@ -163,7 +163,8 @@ public class TestEntity implements Parsable, AdditionalDataHolder {
         return _additionalData;
     }
 
-    @jakarta.annotation.Nonnull public static TestEntity createFromDiscriminatorValue(
+    @jakarta.annotation.Nonnull
+    public static TestEntity createFromDiscriminatorValue(
             @jakarta.annotation.Nonnull final ParseNode parseNode) {
         return new TestEntity();
     }

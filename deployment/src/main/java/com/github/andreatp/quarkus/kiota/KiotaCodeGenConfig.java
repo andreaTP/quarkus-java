@@ -8,13 +8,10 @@ import io.quarkus.runtime.annotations.ConfigRoot;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-
 import org.eclipse.microprofile.config.Config;
 
 @ConfigRoot(name = KiotaCodeGenConfig.KIOTA_CONFIG_PREFIX, phase = ConfigPhase.BUILD_TIME)
@@ -43,15 +40,19 @@ public class KiotaCodeGenConfig {
     private static final String CLIENT_PACKAGE_NAME = ".package-name";
     private static final String INCLUDE_PATH = ".include-path";
     private static final String EXCLUDE_PATH = ".exclude-path";
-    private static final List<String> DEFAULT_SERIALIZER = List.of("com.github.andreatp.kiota.serialization.JsonSerializationWriterFactory",
-            "com.microsoft.kiota.serialization.TextSerializationWriterFactory",
-            "com.microsoft.kiota.serialization.FormSerializationWriterFactory",
-            "com.microsoft.kiota.serialization.MultipartSerializationWriterFactory");
+    private static final List<String> DEFAULT_SERIALIZER =
+            List.of(
+                    "com.github.andreatp.kiota.serialization.JsonSerializationWriterFactory",
+                    "com.microsoft.kiota.serialization.TextSerializationWriterFactory",
+                    "com.microsoft.kiota.serialization.FormSerializationWriterFactory",
+                    "com.microsoft.kiota.serialization.MultipartSerializationWriterFactory");
     private static final String SERIALIZER = ".serializer";
 
-    private static final List<String> DEFAULT_DESERIALIZER = List.of("com.github.andreatp.kiota.serialization.JsonParseNodeFactory",
-        "com.microsoft.kiota.serialization.TextParseNodeFactory",
-        "com.microsoft.kiota.serialization.FormParseNodeFactory");
+    private static final List<String> DEFAULT_DESERIALIZER =
+            List.of(
+                    "com.github.andreatp.kiota.serialization.JsonParseNodeFactory",
+                    "com.microsoft.kiota.serialization.TextParseNodeFactory",
+                    "com.microsoft.kiota.serialization.FormParseNodeFactory");
     private static final String DESERIALIZER = ".deserializer";
 
     public static io.quarkus.utilities.OS getOs(final Config config) {
@@ -171,8 +172,8 @@ public class KiotaCodeGenConfig {
     }
 
     public static List<String> getSerializer(final Config config, String filename) {
-        String serializer = config.getConfigValue(KIOTA_CONFIG_PREFIX + "." + filename + SERIALIZER)
-                .getValue();
+        String serializer =
+                config.getConfigValue(KIOTA_CONFIG_PREFIX + "." + filename + SERIALIZER).getValue();
         if (serializer != null) {
             return List.of(serializer.split(","));
         }
@@ -180,8 +181,9 @@ public class KiotaCodeGenConfig {
     }
 
     public static List<String> getDeserializer(final Config config, String filename) {
-        String deserializer = config.getConfigValue(KIOTA_CONFIG_PREFIX + "." + filename + DESERIALIZER)
-                .getValue();
+        String deserializer =
+                config.getConfigValue(KIOTA_CONFIG_PREFIX + "." + filename + DESERIALIZER)
+                        .getValue();
         if (deserializer != null) {
             return List.of(deserializer.split(","));
         }

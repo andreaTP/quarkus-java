@@ -15,7 +15,8 @@ public class JsonParseNodeFactory implements ParseNodeFactory {
     public JsonParseNodeFactory() {}
 
     /** {@inheritDoc} */
-    @Nonnull public String getValidContentType() {
+    @Nonnull
+    public String getValidContentType() {
         return validContentType;
     }
 
@@ -23,7 +24,8 @@ public class JsonParseNodeFactory implements ParseNodeFactory {
 
     /** {@inheritDoc} */
     @Override
-    @Nonnull public ParseNode getParseNode(
+    @Nonnull
+    public ParseNode getParseNode(
             @Nonnull final String contentType, @Nonnull final InputStream rawResponse) {
         Objects.requireNonNull(contentType, "parameter contentType cannot be null");
         Objects.requireNonNull(rawResponse, "parameter rawResponse cannot be null");
