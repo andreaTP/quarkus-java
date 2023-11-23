@@ -3,6 +3,8 @@ package com.microsoft.kiota.http;
 import io.vertx.core.http.HttpMethod;
 
 public class HttpMethodCompatibility {
+    private HttpMethodCompatibility() {}
+
     public static HttpMethod convert(com.microsoft.kiota.HttpMethod method) {
         switch (method) {
             case GET:

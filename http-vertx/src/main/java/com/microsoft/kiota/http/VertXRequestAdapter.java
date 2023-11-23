@@ -3,7 +3,16 @@ package com.microsoft.kiota.http;
 import static com.microsoft.kiota.http.HeadersCompatibility.getMultiMap;
 import static com.microsoft.kiota.http.HttpMethodCompatibility.convert;
 
-import com.microsoft.kiota.*;
+import com.microsoft.kiota.ApiClientBuilder;
+import com.microsoft.kiota.ApiException;
+import com.microsoft.kiota.ApiExceptionBuilder;
+import com.microsoft.kiota.PeriodAndDuration;
+import com.microsoft.kiota.RequestAdapter;
+import com.microsoft.kiota.RequestInformation;
+import com.microsoft.kiota.RequestOption;
+import com.microsoft.kiota.ResponseHandler;
+import com.microsoft.kiota.ResponseHandlerOption;
+import com.microsoft.kiota.ResponseHeaders;
 import com.microsoft.kiota.serialization.Parsable;
 import com.microsoft.kiota.serialization.ParsableFactory;
 import com.microsoft.kiota.serialization.ParseNode;
@@ -35,15 +44,11 @@ import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-/** RequestAdapter implementation for OkHttp */
+/** RequestAdapter implementation for VertX */
 public class VertXRequestAdapter implements RequestAdapter {
     private static final String contentTypeHeaderKey = "Content-Type";
     @Nonnull private final WebClient client;
@@ -125,25 +130,19 @@ public class VertXRequestAdapter implements RequestAdapter {
         Objects.requireNonNull(requestInfo, nullRequestInfoParameter);
         Objects.requireNonNull(factory, nullFactoryParameter);
 
-        HttpResponse response = this.getHttpResponseMessage(requestInfo, null);
+        HttpResponse response = this.getHttpResponseMessage(requestInfo);
         final ResponseHandler responseHandler = getResponseHandler(requestInfo);
         if (responseHandler == null) {
-            boolean closeResponse = true;
-            try {
-                this.throwIfFailedResponse(response, errorMappings);
-                if (this.shouldReturnNull(response)) {
-                    return null;
-                }
-                final ParseNode rootNode = getRootParseNode(response);
-                if (rootNode == null) {
-                    closeResponse = false;
-                    return null;
-                }
-                final List<ModelType> result = rootNode.getCollectionOfObjectValues(factory);
-                return result;
-            } finally {
-                closeResponse(closeResponse, response);
+            this.throwIfFailedResponse(response, errorMappings);
+            if (this.shouldReturnNull(response)) {
+                return null;
             }
+            final ParseNode rootNode = getRootParseNode(response);
+            if (rootNode == null) {
+                return null;
+            }
+            final List<ModelType> result = rootNode.getCollectionOfObjectValues(factory);
+            return result;
         } else {
             return responseHandler.handleResponse(response, errorMappings);
         }
@@ -168,33 +167,21 @@ public class VertXRequestAdapter implements RequestAdapter {
         Objects.requireNonNull(requestInfo, nullRequestInfoParameter);
         Objects.requireNonNull(factory, nullFactoryParameter);
 
-        HttpResponse response = this.getHttpResponseMessage(requestInfo, null);
+        HttpResponse response = this.getHttpResponseMessage(requestInfo);
         final ResponseHandler responseHandler = getResponseHandler(requestInfo);
         if (responseHandler == null) {
-            boolean closeResponse = true;
-            try {
-                this.throwIfFailedResponse(response, errorMappings);
-                if (this.shouldReturnNull(response)) {
-                    return null;
-                }
-                final ParseNode rootNode = getRootParseNode(response);
-                if (rootNode == null) {
-                    closeResponse = false;
-                    return null;
-                }
-                final ModelType result = rootNode.getObjectValue(factory);
-                return result;
-            } finally {
-                closeResponse(closeResponse, response);
+            this.throwIfFailedResponse(response, errorMappings);
+            if (this.shouldReturnNull(response)) {
+                return null;
             }
+            final ParseNode rootNode = getRootParseNode(response);
+            if (rootNode == null) {
+                return null;
+            }
+            final ModelType result = rootNode.getObjectValue(factory);
+            return result;
         } else {
             return responseHandler.handleResponse(response, errorMappings);
-        }
-    }
-
-    private void closeResponse(boolean closeResponse, HttpResponse response) {
-        if (closeResponse && response.statusCode() != 204) {
-            // response.close();
         }
     }
 
@@ -205,69 +192,62 @@ public class VertXRequestAdapter implements RequestAdapter {
             @Nonnull final Class<ModelType> targetClass) {
         Objects.requireNonNull(requestInfo, nullRequestInfoParameter);
         Objects.requireNonNull(targetClass, "parameter targetClass cannot be null");
-        HttpResponse response = this.getHttpResponseMessage(requestInfo, null);
+
+        HttpResponse response = this.getHttpResponseMessage(requestInfo);
         final ResponseHandler responseHandler = getResponseHandler(requestInfo);
         if (responseHandler == null) {
-            boolean closeResponse = true;
-            try {
-                this.throwIfFailedResponse(response, errorMappings);
-                if (this.shouldReturnNull(response)) {
+            this.throwIfFailedResponse(response, errorMappings);
+            if (this.shouldReturnNull(response)) {
+                return null;
+            }
+            if (targetClass == Void.class) {
+                return null;
+            } else {
+                if (targetClass == InputStream.class) {
+                    // TODO: verify streaming responses
+                    final InputStream rawInputStream =
+                            new ByteArrayInputStream(response.bodyAsBuffer().getBytes());
+                    return (ModelType) rawInputStream;
+                }
+                final ParseNode rootNode = getRootParseNode(response);
+                if (rootNode == null) {
                     return null;
                 }
-                if (targetClass == Void.class) {
-                    return null;
+                Object result;
+                if (targetClass == Boolean.class) {
+                    result = rootNode.getBooleanValue();
+                } else if (targetClass == Byte.class) {
+                    result = rootNode.getByteValue();
+                } else if (targetClass == String.class) {
+                    result = rootNode.getStringValue();
+                } else if (targetClass == Short.class) {
+                    result = rootNode.getShortValue();
+                } else if (targetClass == BigDecimal.class) {
+                    result = rootNode.getBigDecimalValue();
+                } else if (targetClass == Double.class) {
+                    result = rootNode.getDoubleValue();
+                } else if (targetClass == Integer.class) {
+                    result = rootNode.getIntegerValue();
+                } else if (targetClass == Float.class) {
+                    result = rootNode.getFloatValue();
+                } else if (targetClass == Long.class) {
+                    result = rootNode.getLongValue();
+                } else if (targetClass == UUID.class) {
+                    result = rootNode.getUUIDValue();
+                } else if (targetClass == OffsetDateTime.class) {
+                    result = rootNode.getOffsetDateTimeValue();
+                } else if (targetClass == LocalDate.class) {
+                    result = rootNode.getLocalDateValue();
+                } else if (targetClass == LocalTime.class) {
+                    result = rootNode.getLocalTimeValue();
+                } else if (targetClass == PeriodAndDuration.class) {
+                    result = rootNode.getPeriodAndDurationValue();
+                } else if (targetClass == byte[].class) {
+                    result = rootNode.getByteArrayValue();
                 } else {
-                    if (targetClass == InputStream.class) {
-                        closeResponse = false;
-                        // TODO: verify streaming responses
-                        final InputStream rawInputStream =
-                                new ByteArrayInputStream(response.bodyAsBuffer().getBytes());
-                        return (ModelType) rawInputStream;
-                    }
-                    final ParseNode rootNode = getRootParseNode(response);
-                    if (rootNode == null) {
-                        closeResponse = false;
-                        return null;
-                    }
-                    Object result;
-                    if (targetClass == Boolean.class) {
-                        result = rootNode.getBooleanValue();
-                    } else if (targetClass == Byte.class) {
-                        result = rootNode.getByteValue();
-                    } else if (targetClass == String.class) {
-                        result = rootNode.getStringValue();
-                    } else if (targetClass == Short.class) {
-                        result = rootNode.getShortValue();
-                    } else if (targetClass == BigDecimal.class) {
-                        result = rootNode.getBigDecimalValue();
-                    } else if (targetClass == Double.class) {
-                        result = rootNode.getDoubleValue();
-                    } else if (targetClass == Integer.class) {
-                        result = rootNode.getIntegerValue();
-                    } else if (targetClass == Float.class) {
-                        result = rootNode.getFloatValue();
-                    } else if (targetClass == Long.class) {
-                        result = rootNode.getLongValue();
-                    } else if (targetClass == UUID.class) {
-                        result = rootNode.getUUIDValue();
-                    } else if (targetClass == OffsetDateTime.class) {
-                        result = rootNode.getOffsetDateTimeValue();
-                    } else if (targetClass == LocalDate.class) {
-                        result = rootNode.getLocalDateValue();
-                    } else if (targetClass == LocalTime.class) {
-                        result = rootNode.getLocalTimeValue();
-                    } else if (targetClass == PeriodAndDuration.class) {
-                        result = rootNode.getPeriodAndDurationValue();
-                    } else if (targetClass == byte[].class) {
-                        result = rootNode.getByteArrayValue();
-                    } else {
-                        throw new RuntimeException(
-                                "unexpected payload type " + targetClass.getName());
-                    }
-                    return (ModelType) result;
+                    throw new RuntimeException("unexpected payload type " + targetClass.getName());
                 }
-            } finally {
-                closeResponse(closeResponse, response);
+                return (ModelType) result;
             }
         } else {
             return responseHandler.handleResponse(response, errorMappings);
@@ -281,25 +261,20 @@ public class VertXRequestAdapter implements RequestAdapter {
             @Nonnull final ValuedEnumParser<ModelType> enumParser) {
         Objects.requireNonNull(requestInfo, nullRequestInfoParameter);
         Objects.requireNonNull(enumParser, nullEnumParserParameter);
-        HttpResponse response = this.getHttpResponseMessage(requestInfo, null);
+
+        HttpResponse response = this.getHttpResponseMessage(requestInfo);
         final ResponseHandler responseHandler = getResponseHandler(requestInfo);
         if (responseHandler == null) {
-            boolean closeResponse = true;
-            try {
-                this.throwIfFailedResponse(response, errorMappings);
-                if (this.shouldReturnNull(response)) {
-                    return null;
-                }
-                final ParseNode rootNode = getRootParseNode(response);
-                if (rootNode == null) {
-                    closeResponse = false;
-                    return null;
-                }
-                final Object result = rootNode.getEnumValue(enumParser);
-                return (ModelType) result;
-            } finally {
-                closeResponse(closeResponse, response);
+            this.throwIfFailedResponse(response, errorMappings);
+            if (this.shouldReturnNull(response)) {
+                return null;
             }
+            final ParseNode rootNode = getRootParseNode(response);
+            if (rootNode == null) {
+                return null;
+            }
+            final Object result = rootNode.getEnumValue(enumParser);
+            return (ModelType) result;
         } else {
             return responseHandler.handleResponse(response, errorMappings);
         }
@@ -312,25 +287,20 @@ public class VertXRequestAdapter implements RequestAdapter {
             @Nonnull final ValuedEnumParser<ModelType> enumParser) {
         Objects.requireNonNull(requestInfo, nullRequestInfoParameter);
         Objects.requireNonNull(enumParser, nullEnumParserParameter);
-        HttpResponse response = this.getHttpResponseMessage(requestInfo, null);
+
+        HttpResponse response = this.getHttpResponseMessage(requestInfo);
         final ResponseHandler responseHandler = getResponseHandler(requestInfo);
         if (responseHandler == null) {
-            boolean closeResponse = true;
-            try {
-                this.throwIfFailedResponse(response, errorMappings);
-                if (this.shouldReturnNull(response)) {
-                    return null;
-                }
-                final ParseNode rootNode = getRootParseNode(response);
-                if (rootNode == null) {
-                    closeResponse = false;
-                    return null;
-                }
-                final Object result = rootNode.getCollectionOfEnumValues(enumParser);
-                return (List<ModelType>) result;
-            } finally {
-                closeResponse(closeResponse, response);
+            this.throwIfFailedResponse(response, errorMappings);
+            if (this.shouldReturnNull(response)) {
+                return null;
             }
+            final ParseNode rootNode = getRootParseNode(response);
+            if (rootNode == null) {
+                return null;
+            }
+            final Object result = rootNode.getCollectionOfEnumValues(enumParser);
+            return (List<ModelType>) result;
         } else {
             return responseHandler.handleResponse(response, errorMappings);
         }
@@ -343,17 +313,15 @@ public class VertXRequestAdapter implements RequestAdapter {
             @Nonnull final Class<ModelType> targetClass) {
         Objects.requireNonNull(requestInfo, nullRequestInfoParameter);
 
-        HttpResponse response = getHttpResponseMessage(requestInfo, null);
+        HttpResponse response = getHttpResponseMessage(requestInfo);
         final ResponseHandler responseHandler = getResponseHandler(requestInfo);
         if (responseHandler == null) {
-            boolean closeResponse = true;
             this.throwIfFailedResponse(response, errorMappings);
             if (this.shouldReturnNull(response)) {
                 return null;
             }
             final ParseNode rootNode = getRootParseNode(response);
             if (rootNode == null) {
-                closeResponse = false;
                 return null;
             }
             final List<ModelType> result = rootNode.getCollectionOfPrimitiveValues(targetClass);
@@ -418,44 +386,30 @@ public class VertXRequestAdapter implements RequestAdapter {
                         : (statusCode >= 400 && statusCode < 500
                                 ? errorMappings.get("4XX")
                                 : errorMappings.get("5XX"));
-        boolean closeResponse = true;
-        try {
-            final ParseNode rootNode = getRootParseNode(response);
-            if (rootNode == null) {
-                closeResponse = false;
-                final ApiException result =
-                        new ApiExceptionBuilder()
-                                .withMessage(
-                                        "service returned status code"
-                                                + statusCode
-                                                + " but no response body was found")
-                                .withResponseStatusCode(statusCode)
-                                .withResponseHeaders(responseHeaders)
-                                .build();
-                throw result;
-            }
-            ApiException result =
-                    new ApiExceptionBuilder(() -> rootNode.getObjectValue(errorClass))
+        final ParseNode rootNode = getRootParseNode(response);
+        if (rootNode == null) {
+            final ApiException result =
+                    new ApiExceptionBuilder()
+                            .withMessage(
+                                    "service returned status code"
+                                            + statusCode
+                                            + " but no response body was found")
                             .withResponseStatusCode(statusCode)
                             .withResponseHeaders(responseHeaders)
                             .build();
             throw result;
-        } finally {
-            closeResponse(closeResponse, response);
         }
+        ApiException result =
+                new ApiExceptionBuilder(() -> rootNode.getObjectValue(errorClass))
+                        .withResponseStatusCode(statusCode)
+                        .withResponseHeaders(responseHeaders)
+                        .build();
+        throw result;
     }
 
-    private static final String claimsKey = "claims";
-
-    private HttpResponse getHttpResponseMessage(
-            @Nonnull final RequestInformation requestInfo, @Nullable final String claims) {
+    private HttpResponse getHttpResponseMessage(@Nonnull final RequestInformation requestInfo) {
         Objects.requireNonNull(requestInfo, nullRequestInfoParameter);
         this.setBaseUrlForRequestInformation(requestInfo);
-        final Map<String, Object> additionalContext = new HashMap<String, Object>();
-        if (claims != null && !claims.isEmpty()) {
-            additionalContext.put(claimsKey, claims);
-        }
-        HttpResponse response;
         Future<HttpResponse<Buffer>> result;
         try {
             var req =
@@ -477,7 +431,7 @@ public class VertXRequestAdapter implements RequestAdapter {
             }
 
             // TODO: move this to await in VirtualThreads, should be easy!
-            response = result.toCompletionStage().toCompletableFuture().get();
+            return result.toCompletionStage().toCompletableFuture().get();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
@@ -487,63 +441,6 @@ public class VertXRequestAdapter implements RequestAdapter {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        return this.retryCAEResponseIfRequired(response, requestInfo, claims);
-    }
-
-    private static final Pattern bearerPattern =
-            Pattern.compile("^Bearer\\s.*", Pattern.CASE_INSENSITIVE);
-    private static final Pattern claimsPattern =
-            Pattern.compile("\\s?claims=\"([^\"]+)\"", Pattern.CASE_INSENSITIVE);
-
-    private HttpResponse retryCAEResponseIfRequired(
-            @Nonnull final HttpResponse response,
-            @Nonnull final RequestInformation requestInfo,
-            @Nullable final String claims) {
-        final String responseClaims = this.getClaimsFromResponse(response, requestInfo, claims);
-        if (responseClaims != null && !responseClaims.isEmpty()) {
-            if (requestInfo.content != null && requestInfo.content.markSupported()) {
-                try {
-                    requestInfo.content.reset();
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-            closeResponse(true, response);
-            return this.getHttpResponseMessage(requestInfo, responseClaims);
-        }
-        return response;
-    }
-
-    String getClaimsFromResponse(
-            @Nonnull final HttpResponse response,
-            @Nonnull final RequestInformation requestInfo,
-            @Nullable final String claims) {
-        if (response.statusCode() == 401
-                && (claims == null || claims.isEmpty())
-                && // we avoid infinite loops and retry only once
-                (requestInfo.content == null || requestInfo.content.markSupported())) {
-            final List<String> authenticateHeader = response.headers().getAll("WWW-Authenticate");
-            if (!authenticateHeader.isEmpty()) {
-                String rawHeaderValue = null;
-                for (final String authenticateEntry : authenticateHeader) {
-                    final Matcher matcher = bearerPattern.matcher(authenticateEntry);
-                    if (matcher.matches()) {
-                        rawHeaderValue = authenticateEntry.replaceFirst("^Bearer\\s", "");
-                        break;
-                    }
-                }
-                if (rawHeaderValue != null) {
-                    final String[] parameters = rawHeaderValue.split(",");
-                    for (final String parameter : parameters) {
-                        final Matcher matcher = claimsPattern.matcher(parameter);
-                        if (matcher.matches()) {
-                            return matcher.group(1);
-                        }
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     private void setBaseUrlForRequestInformation(@Nonnull final RequestInformation requestInfo) {
@@ -551,8 +448,6 @@ public class VertXRequestAdapter implements RequestAdapter {
         requestInfo.pathParameters.put("baseurl", getBaseUrl());
     }
 
-    /** {@inheritDoc} */
-    @SuppressWarnings("unchecked")
     @Nonnull
     public <T> T convertToNativeRequest(@Nonnull final RequestInformation requestInfo) {
         try {
@@ -563,14 +458,6 @@ public class VertXRequestAdapter implements RequestAdapter {
         }
     }
 
-    /**
-     * Creates a new request from the request information instance.
-     *
-     * @param requestInfo       request information instance.
-     * @return the created request instance.
-     * @throws URISyntaxException if the URI is invalid.
-     * @throws MalformedURLException if the URL is invalid.
-     */
     protected @Nonnull HttpRequest getRequestFromRequestInformation(
             @Nonnull final RequestInformation requestInfo)
             throws URISyntaxException, MalformedURLException {
