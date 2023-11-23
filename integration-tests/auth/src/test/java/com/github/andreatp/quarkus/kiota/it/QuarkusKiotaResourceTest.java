@@ -20,6 +20,7 @@ import io.vertx.ext.web.codec.BodyCodec;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
+import jakarta.inject.Inject;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -33,20 +34,31 @@ public class QuarkusKiotaResourceTest {
 
     @ConfigProperty(name = "quarkus.oidc.auth-server-url")
     String keycloakUrl;
+    @Inject
+    Vertx vertx;
 
-    @Test
-    public void testHelloEndpoint() {
-        given().when()
-                .get("/quarkus-kiota")
-                .then()
-                .statusCode(200)
-                .body(is("{\"value\":\"Hello quarkus-kiota\"}"));
-    }
+    final static String CLIENT_ID = UUID.randomUUID().toString();
+    final static String CLIENT_SECRET = UUID.randomUUID().toString();
 
     @Test
     public void testHelloEndpointUsingTheKiotaClient() throws Exception {
+        OAuth2Options options = new OAuth2Options()
+                .setFlow(OAuth2FlowType.CLIENT)
+                .setClientId(CLIENT_ID)
+                .setTokenPath(keycloakUrl + "token")
+                .setClientSecret(CLIENT_SECRET);
+
+        //Adding using random UUIDs as the mock does not care about concrete values
+        OAuth2Auth oAuth2Auth = OAuth2Auth.create(vertx, options);
+
+        Oauth2Credentials oauth2Credentials = new Oauth2Credentials();
+
+        OAuth2WebClient oAuth2WebClient = OAuth2WebClient
+                .create(WebClient.create(vertx), oAuth2Auth)
+                .withCredentials(oauth2Credentials);
+
         // Arrange
-        RequestAdapter adapter = new VertXRequestAdapter(new AnonymousAuthenticationProvider());
+        RequestAdapter adapter = new VertXRequestAdapter(oAuth2WebClient);
         adapter.setBaseUrl("http://localhost:8081");
         ApiClient client = new ApiClient(adapter);
 

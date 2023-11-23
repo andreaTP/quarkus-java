@@ -1,7 +1,6 @@
 package com.microsoft.kiota.http;
 
 import com.microsoft.kiota.*;
-import com.microsoft.kiota.authentication.AuthenticationProvider;
 import com.microsoft.kiota.serialization.Parsable;
 import com.microsoft.kiota.serialization.ParsableFactory;
 import com.microsoft.kiota.serialization.ParseNode;
@@ -40,9 +39,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,7 +49,6 @@ import static com.microsoft.kiota.http.HttpMethodCompatibility.convert;
 public class VertXRequestAdapter implements RequestAdapter {
     private static final String contentTypeHeaderKey = "Content-Type";
     @Nonnull private final WebClient client;
-    @Nonnull private final AuthenticationProvider authProvider;
     @Nonnull private ParseNodeFactory pNodeFactory;
     @Nonnull private SerializationWriterFactory sWriterFactory;
     @Nonnull private String baseUrl = "";
@@ -66,55 +61,24 @@ public class VertXRequestAdapter implements RequestAdapter {
         return baseUrl;
     }
 
-    /**
-     * Instantiates a new OkHttp request adapter with the provided authentication provider.
-     * @param authenticationProvider the authentication provider to use for authenticating requests.
-     */
-    public VertXRequestAdapter(@Nonnull final AuthenticationProvider authenticationProvider) {
-        this(authenticationProvider, null, null, null);
+    public VertXRequestAdapter(@Nonnull final Vertx vertx) {
+        this(WebClient.create(vertx));
     }
 
-    /**
-     * Instantiates a new OkHttp request adapter with the provided authentication provider, and the parse node factory.
-     * @param authenticationProvider the authentication provider to use for authenticating requests.
-     * @param client the http client to use for sending requests.
-     */
-    public VertXRequestAdapter(
-            @Nonnull final AuthenticationProvider authenticationProvider,
-            @Nullable final WebClient client) {
-        this(authenticationProvider, client, null, null);
+    public VertXRequestAdapter(@Nullable final WebClient client) {
+        this(client, null, null);
     }
 
-    /**
-     * Instantiates a new OkHttp request adapter with the provided authentication provider, parse node factory, and the serialization writer factory.
-     * @param authenticationProvider the authentication provider to use for authenticating requests.
-     * @param client the http client to use for sending requests.
-     * @param parseNodeFactory the parse node factory to use for parsing responses.
-     */
-    @SuppressWarnings("LambdaLast")
     public VertXRequestAdapter(
-            @Nonnull final AuthenticationProvider authenticationProvider,
             @Nullable final WebClient client,
             @Nullable final ParseNodeFactory parseNodeFactory) {
-        this(authenticationProvider, client, parseNodeFactory, null);
+        this(client, parseNodeFactory, null);
     }
 
-    /**
-     * Instantiates a new OkHttp request adapter with the provided authentication provider, parse node factory, serialization writer factory, and the http client.
-     * @param authenticationProvider the authentication provider to use for authenticating requests.
-     * @param client the http client to use for sending requests.
-     * @param parseNodeFactory the parse node factory to use for parsing responses.
-     * @param serializationWriterFactory the serialization writer factory to use for serializing requests.
-     */
-    @SuppressWarnings("LambdaLast")
     public VertXRequestAdapter(
-            @Nonnull final AuthenticationProvider authenticationProvider,
             @Nullable final WebClient client,
             @Nullable final ParseNodeFactory parseNodeFactory,
             @Nullable final SerializationWriterFactory serializationWriterFactory) {
-        this.authProvider =
-                Objects.requireNonNull(
-                        authenticationProvider, "parameter authenticationProvider cannot be null");
         if (client == null) {
             this.client = WebClient.create(Vertx.vertx());
         } else {
@@ -486,7 +450,6 @@ public class VertXRequestAdapter implements RequestAdapter {
         if (claims != null && !claims.isEmpty()) {
             additionalContext.put(claimsKey, claims);
         }
-        this.authProvider.authenticateRequest(requestInfo, additionalContext);
         HttpResponse response;
         Future<HttpResponse<Buffer>> result;
         try {
@@ -594,7 +557,6 @@ public class VertXRequestAdapter implements RequestAdapter {
     @Nonnull public <T> T convertToNativeRequest(@Nonnull final RequestInformation requestInfo) {
         try {
         Objects.requireNonNull(requestInfo, nullRequestInfoParameter);
-            this.authProvider.authenticateRequest(requestInfo, null);
             return (T) getRequestFromRequestInformation(requestInfo);
         } catch (URISyntaxException | MalformedURLException ex) {
             throw new RuntimeException(ex);
@@ -615,15 +577,10 @@ public class VertXRequestAdapter implements RequestAdapter {
             final URL requestURL = requestInfo.getUri().toURL();
 
             final HttpRequest request = client
-                    .request(convert(requestInfo.httpMethod), requestURL.toString())
+                    .requestAbs(convert(requestInfo.httpMethod), requestURL.toString())
                     .followRedirects(true);
 
-            for (final Map.Entry<String, Set<String>> headerEntry :
-                    requestInfo.headers.entrySet()) {
-                for (final String headerValue : headerEntry.getValue()) {
-                    request.putHeader(headerEntry.getKey(), headerValue);
-                }
-            }
+            request.putHeaders(getMultiMap(requestInfo.headers));
             return request;
     }
 }
