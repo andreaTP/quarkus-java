@@ -458,7 +458,6 @@ public class VertXRequestAdapter implements RequestAdapter {
         HttpResponse response;
         Future<HttpResponse<Buffer>> result;
         try {
-            // TODO refactor this implementation
             var req =
                     this.client
                             .requestAbs(
@@ -469,7 +468,6 @@ public class VertXRequestAdapter implements RequestAdapter {
             if (requestInfo.content == null) {
                 result = req.send();
             } else {
-                // TODO: implement proper streaming and verify async behavior etc.
                 byte[] content = requestInfo.content.readAllBytes();
                 if (content.length > 0) {
                     result = req.sendBuffer(Buffer.buffer(content));
@@ -478,13 +476,8 @@ public class VertXRequestAdapter implements RequestAdapter {
                 }
             }
 
-            // Hack - make everything sync now!
-            var completableTask = new CompletableFuture<HttpResponse>();
-            result.onSuccess(r -> completableTask.complete(r))
-                    .onFailure(err -> completableTask.completeExceptionally(err));
-
-            // TODO: verify how to make this better
-            response = completableTask.get();
+            // TODO: move this to await in VirtualThreads, should be easy!
+            response = result.toCompletionStage().toCompletableFuture().get();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
